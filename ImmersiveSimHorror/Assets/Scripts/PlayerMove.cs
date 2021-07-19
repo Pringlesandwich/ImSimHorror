@@ -16,9 +16,9 @@ public class PlayerMove : MonoBehaviour
     float playerHeight = 2f;
 
     [Header("Movement")]
-    public float slowWalkSpeed = 2f;
-    public float walkSpeed = 4.5f;
-    public float runSpeed = 8f;
+    public float slowWalkSpeed = 1f;
+    public float walkSpeed = 3f;
+    public float runSpeed = 6f;
     public float movementMultiplier = 15f;
     public float airMultiplier = 0.1f;
 
@@ -26,30 +26,28 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] KeyCode jumpKey = KeyCode.Space;
 
     [Header("Jumping")]
-    public float jumpForce = 8f;
+    public float jumpForce = 7f;
 
     [Header("Crouch")]
-    public float crouchCamSpeed;
-    public float standHeight;
-    public float crouchHeight;
+    public float crouchCamSpeed = 15;
+    public float standHeight = 0.6f;
+    public float crouchHeight = -0.15f;
     public GameObject standMesh;
     public GameObject crouchMesh;
     public GameObject crouchDetector;
-    public float crouchSpeedMultiplier;
-    public float unDuckedHeight;
+    public float crouchSpeedMultiplier = 0.5f;
+    public float unDuckedHeight = 0.16f;
 
     [Header("Drag")]
     [SerializeField] float groundDrag = 12f;
-    [SerializeField] float airDrag = 1f;
+    [SerializeField] float airDrag = 0.05f;
 
     [Header("Lean")]
     [SerializeField] float leanAmount = 0.4f;
 
     [Header("Climb")]
     [SerializeField] float climbTime = 0.5f;
-    //[SerializeField] float ledgeDetectDistance = 6.5f;
     [SerializeField] GameObject ledgeOverTopOriginObject;
-    //[SerializeField] GameObject ledgeTestCapsult;
     [SerializeField] AnimationCurve climbYCurve;
     [SerializeField] AnimationCurve climbXZCurve;
 
@@ -141,35 +139,47 @@ public class PlayerMove : MonoBehaviour
 
 
 
-
-
-
-        bool somethingAbove = false;
-        float distanceToOvearhead = 100.0f;
-        RaycastHit hit;
-        Vector3 origin = new Vector3(crouchMesh.transform.position.x,
-            crouchMesh.transform.position.y + 0.02f, crouchMesh.transform.position.z);
-        Vector3 origin2 = new Vector3(origin.x, origin.y + 1f, origin.z);
-        //Vector3 direction = transform.TransformDirection(Vector3.up);
-        //6 is player 
-        if (Physics.SphereCast(origin, 0.46f, transform.up, out hit, 1.02f))
-        {
-            somethingAbove = true;
-        }
-
-        // I CAN JUST USE THIS SMALL BALL AND CHECK THAT ITS EITHER FALSE 
-        // OR DISTANCE IS ABOVE THE HEIGHT TO SET SOMETHINGABOVE TO FALSE 
-
-        if (somethingAbove)
-        {
-            RaycastHit hitDuck;
-            if (Physics.SphereCast(origin, 0.2f, transform.up, out hitDuck, 3f))
+        
+            bool somethingAbove = false;
+            float distanceToOvearhead = 100.0f;
+            RaycastHit hit;
+            Vector3 origin = new Vector3(crouchMesh.transform.position.x,
+                crouchMesh.transform.position.y + 0.02f, crouchMesh.transform.position.z);
+            Vector3 origin2 = new Vector3(origin.x, origin.y + 1f, origin.z);
+            //Vector3 direction = transform.TransformDirection(Vector3.up);
+            //6 is player 
+            if (Physics.SphereCast(origin, 0.46f, transform.up, out hit, 1.02f))
             {
-                distanceToOvearhead = hitDuck.distance - 0.5f;
+                somethingAbove = true;
             }
+
+            // I CAN JUST USE THIS SMALL BALL AND CHECK THAT ITS EITHER FALSE 
+            // OR DISTANCE IS ABOVE THE HEIGHT TO SET SOMETHINGABOVE TO FALSE 
+
+            if (somethingAbove)
+            {
+                RaycastHit hitDuck;
+                if (Physics.SphereCast(origin, 0.2f, transform.up, out hitDuck, 3f))
+                {
+                    distanceToOvearhead = hitDuck.distance - 0.5f;
+                }
+            }
+        
+
+
+
+
+
+        //TEST LEAN
+        var targetCamLeanRight = Input.GetKey(KeyCode.E) ? leanAmount : 0;
+
+        if (targetCamLeanRight <= 0)
+        {
+            targetCamLeanRight = Input.GetKey(KeyCode.Q) ? -leanAmount : 0;
         }
 
 
+        //crouching
         if (Input.GetKeyDown(KeyCode.C))
         {
             if (isCrouching)
@@ -187,47 +197,18 @@ public class PlayerMove : MonoBehaviour
                 isCrouching = !isCrouching;
             }
         }
-
-
-
-        //TEST LEAN
-        var targetCamLeanRight = Input.GetKey(KeyCode.E) ? leanAmount : 0;
-
-        if (targetCamLeanRight <= 0)
         {
-            targetCamLeanRight = Input.GetKey(KeyCode.Q) ? -leanAmount : 0;
+            if (isCrouching)
+            {
+                crouchMesh.GetComponent<SphereCollider>().enabled = true;
+                standMesh.GetComponent<CapsuleCollider>().enabled = false;
+            }
+            else
+            {
+                crouchMesh.GetComponent<SphereCollider>().enabled = false;
+                standMesh.GetComponent<CapsuleCollider>().enabled = true;
+            }
         }
-
-
-
-        if (isCrouching)
-        {
-            crouchMesh.GetComponent<SphereCollider>().enabled = true;
-            standMesh.GetComponent<CapsuleCollider>().enabled = false;
-        }
-        else
-        {
-            crouchMesh.GetComponent<SphereCollider>().enabled = false;
-            standMesh.GetComponent<CapsuleCollider>().enabled = true;
-        }
-
-
-
-        //distanceToOvearhead
-
-        var targetCameraHieght = isCrouching ? crouchHeight : standHeight;
-
-
-        distanceToOvearhead = Mathf.Clamp(distanceToOvearhead, crouchHeight, crouchHeight + unDuckedHeight);
-        
-
-        if (isCrouching)
-            targetCameraHieght = distanceToOvearhead;
-
-        cam.transform.localPosition = Vector3.Lerp(cam.transform.localPosition,
-            new Vector3(targetCamLeanRight, targetCameraHieght, 0), Time.deltaTime * crouchCamSpeed);
-
-
 
 
         //we can climb! or are climbing?
@@ -305,6 +286,7 @@ public class PlayerMove : MonoBehaviour
         float deltaMoveSpeed = 0;
         switch (playerMoveState)
         {
+
             case PlayerMoveState.Slow:
                 deltaMoveSpeed = slowWalkSpeed;
                 break;
